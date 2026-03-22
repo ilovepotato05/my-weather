@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # my-weather
 
 An Electron application with React and TypeScript
@@ -32,3 +33,6 @@ $ npm run build:mac
 # For Linux
 $ npm run build:linux
 ```
+=======
+# my-weather
+>>>>>>> 90ccecc99b5db894fd8f82dfecb1572495183982
