@@ -1,5 +1,5 @@
 appId: com.lmyee.my-weather
-productName: my-weather
+productName: My Weather
 copyright: "Copyright 2026"
 directories:
   buildResources: build
@@ -13,12 +13,17 @@ files:
 asarUnpack:
   - resources/**
 win:
+  target:
+    - nsis
   executableName: my-weather
+  icon: resources/icons/win/icon.ico
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  installerIcon: resources/icons/win/icon.ico
+  uninstallerIcon: resources/icons/win/icon.ico
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
@@ -40,5 +45,7 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
-  provider: generic
-  url: https://example.com/auto-updates
+  provider: github
+  owner: ilovapotato05
+  repo: my-weather
+  releaseType: release

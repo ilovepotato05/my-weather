@@ -1,11 +1,83 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { autoUpdater } from 'electron-updater'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../assets/icon-source.png?asset'
 
+type UpdateStatusPayload = {
+  state: 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
+  version?: string
+  progress?: number
+  message?: string
+  releaseNotes?: string | null
+}
+
+let mainWindow: BrowserWindow | null = null
+let updaterInitialized = false
+
+const sendUpdateStatus = (payload: UpdateStatusPayload): void => {
+  mainWindow?.webContents.send('update-status', payload)
+}
+
+const registerAutoUpdater = (): void => {
+  if (updaterInitialized) return
+  updaterInitialized = true
+
+  autoUpdater.autoDownload = false
+
+  autoUpdater.on('checking-for-update', () => {
+    sendUpdateStatus({ state: 'checking' })
+  })
+
+  autoUpdater.on('update-available', (info) => {
+    sendUpdateStatus({
+      state: 'available',
+      version: info.version,
+      releaseNotes: typeof info.releaseNotes === 'string' ? info.releaseNotes : null
+    })
+  })
+
+  autoUpdater.on('update-not-available', () => {
+    sendUpdateStatus({ state: 'not-available' })
+  })
+
+  autoUpdater.on('download-progress', (progress) => {
+    sendUpdateStatus({ state: 'downloading', progress: Math.round(progress.percent) })
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    sendUpdateStatus({ state: 'downloaded', version: info.version })
+  })
+
+  autoUpdater.on('error', (error) => {
+    sendUpdateStatus({
+      state: 'error',
+      message: error?.message ?? 'Unknown auto-update error.'
+    })
+  })
+
+  ipcMain.on('update-download', () => {
+    if (!app.isPackaged) return
+
+    autoUpdater.downloadUpdate().catch((error) => {
+      sendUpdateStatus({ state: 'error', message: error?.message ?? 'Download failed.' })
+    })
+  })
+
+  ipcMain.on('update-install', () => {
+    if (!app.isPackaged) return
+
+    autoUpdater.quitAndInstall()
+  })
+
+  autoUpdater.checkForUpdates().catch((error) => {
+    sendUpdateStatus({ state: 'error', message: error?.message ?? 'Update check failed.' })
+  })
+}
+
 function createWindow(): void {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     show: false,
@@ -18,12 +90,27 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+    mainWindow?.show()
+  })
+
+  mainWindow.on('closed', () => {
+    mainWindow = null
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
+  })
+
+  mainWindow.webContents.once('did-finish-load', () => {
+    if (app.isPackaged) {
+      registerAutoUpdater()
+    } else {
+      sendUpdateStatus({
+        state: 'idle',
+        message: 'Auto-update runs only in packaged builds.'
+      })
+    }
   })
 
   // HMR for renderer base on electron-vite cli.

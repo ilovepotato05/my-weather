@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
 import './App.css'
 import SearchBar from './components/SearchBar'
 import WeatherCard from './components/WeatherCard'
+import UpdateBanner, { RendererUpdateStatus } from './components/UpdateBanner'
 
 interface WeatherData {
   name: string
@@ -17,6 +18,7 @@ interface WeatherData {
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function App() {
   const [weather, setWeather] = useState<WeatherData | null>(null)
+  const [updateStatus, setUpdateStatus] = useState<RendererUpdateStatus>({ state: 'idle' })
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   const getWeather = async (city: string) => {
@@ -35,9 +37,34 @@ function App() {
     }
   }
 
+  useEffect(() => {
+    const bridge = window.api
+    if (!bridge?.onUpdateStatus) {
+      return
+    }
+
+    const unsubscribe = bridge.onUpdateStatus((payload) => {
+      setUpdateStatus(payload)
+    })
+
+    return () => {
+      unsubscribe()
+    }
+  }, [])
+
+  const downloadUpdate = (): void => {
+    window.api?.downloadUpdate?.()
+  }
+
+  const installUpdate = (): void => {
+    window.api?.installUpdate?.()
+  }
+
   return (
     <div className="container">
       <h1 className="title">MY Weather</h1>
+
+      <UpdateBanner status={updateStatus} onDownload={downloadUpdate} onInstall={installUpdate} />
 
       {/* 🔍 Search Component */}
       <SearchBar onSearch={getWeather} />

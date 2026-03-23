@@ -23,25 +23,11 @@
     "package:win": "npm run build && electron-builder --win",
     "package:mac": "npm run build && electron-builder --mac"
   },
-
-  "build":{
-    "appId": "com.lmyee.my-weather",
-    "productName": "My Weather",
-    "win":{
-      "target": "nsis",
-      "icon": "resources/icons/win/icon.ico"
-    },
-    "nsis":{
-      "createDesktopShortcut": "always",
-      "installerIcon": "resources/icons/win/icon.ico",
-      "uninstallerIcon": "resources/icons/win/icon.ico"
-    }
-  },
-
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "axios": "^1.13.6"
+    "axios": "^1.13.6",
+    "electron-updater": "^6.8.3"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
